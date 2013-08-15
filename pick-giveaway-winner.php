@@ -1,14 +1,14 @@
 <?php
 /**
  * @package Pick_Giveaway_Winner
- * @version 1.0
+ * @version 1.1
  */
 /*
 Plugin Name: Pick Giveaway Winner
 Plugin URI: http://makemyblogpretty.com/plugins/pick-giveaway-winner/
 Description: Randomly select a winner or winners from the comments of a giveaway post. To choose a winner, go to Tools -> Pick Giveaway Winner or <a href="tools.php?page=pick-giveaway-winner">click here</a>.
 Author: Jennette Fulda
-Version: 1.0
+Version: 1.1
 Author URI: http://makemyblogpretty.com/
 License: GPL2
 */
@@ -49,20 +49,20 @@ function pgw_options() {
 		
 		if ($_POST['pgw-dupes']==3) {
 			// Multiple entries allowed
-			$winners = $wpdb->get_results($wpdb->prepare("SELECT comment_author, comment_author_email FROM $wpdb->comments WHERE comment_post_ID = '" . $_POST['pgw-entry-id'] . "' AND comment_approved = 1 ORDER BY RAND() LIMIT " . $_POST['pgw-num-winners']));
+			$winners = $wpdb->get_results($wpdb->prepare("SELECT comment_author, comment_author_email FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = 1 ORDER BY RAND() LIMIT %d", $_POST['pgw-entry-id'], $_POST['pgw-num-winners']));
 		}
 		
 		if ($_POST['pgw-dupes']==2) {
 			// Removes multiple emails, but keeps 1 entry for the email in question
-			$winners = $wpdb->get_results($wpdb->prepare("SELECT comment_author, comment_author_email FROM $wpdb->comments WHERE comment_post_ID = '" . $_POST['pgw-entry-id'] . "' AND comment_approved = 1 GROUP BY comment_author_email ORDER BY RAND() LIMIT " . $_POST['pgw-num-winners']));
+			$winners = $wpdb->get_results($wpdb->prepare("SELECT comment_author, comment_author_email FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = 1 GROUP BY comment_author_email ORDER BY RAND() LIMIT %d", $_POST['pgw-entry-id'], $_POST['pgw-num-winners'] ));
 		}
 
 		if ($_POST['pgw-dupes']==1) {
 			// Removes any duplicant entrants from the winners list
-			$winners = $wpdb->get_results($wpdb->prepare("SELECT comment_author, comment_author_email FROM $wpdb->comments WHERE comment_post_ID = '" . $_POST['pgw-entry-id'] . "' AND comment_approved = 1 GROUP BY comment_author_email ORDER BY RAND()")); // gets ALL comments on the entry
+			$winners = $wpdb->get_results($wpdb->prepare("SELECT comment_author, comment_author_email FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = 1 GROUP BY comment_author_email ORDER BY RAND()", $_POST['pgw-entry-id'])); // gets ALL comments on the entry
 			
 			// Get list of all duplicate emails
-			$losers = $wpdb->get_results($wpdb->prepare("SELECT comment_author_email, COUNT(*) c FROM $wpdb->comments WHERE comment_post_ID = '" . $_POST['pgw-entry-id'] . "' AND comment_approved = 1 GROUP BY comment_author_email HAVING COUNT(*)>1"));
+			$losers = $wpdb->get_results($wpdb->prepare("SELECT comment_author_email, COUNT(*) c FROM $wpdb->comments WHERE comment_post_ID = %d AND comment_approved = 1 GROUP BY comment_author_email HAVING COUNT(*)>1", $_POST['pgw-entry-id']));
 
 			// Save hash of ineligible winners
 			$disqualified = array();
@@ -106,7 +106,7 @@ function pgw_options() {
 		}			
 
 		// Get title of post you selected winners from
-		$winning_post = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->posts WHERE ID = '" . $_POST['pgw-entry-id'] . "'"));
+		$winning_post = $wpdb->get_results($wpdb->prepare("SELECT * FROM $wpdb->posts WHERE ID = %d", $_POST['pgw-entry-id']));
 
 	// Put an settings updated message on the screen
 ?>
@@ -143,9 +143,9 @@ function pgw_options() {
 			</select>
 		</p>
 		<p><label>How should we handle multiple entries (by email address)?:</label></p>
-		<p><input type="radio" name="pgw-dupes" value="1"<?php if ($_POST['pgw-dupes']==1 || !isset($_POST['pgw-dupes'])) : ?> checked<?php endif; ?>> Disqualify multiple entrant from drawing completely
-			<br /><input type="radio" name="pgw-dupes" value="2"<?php if ($_POST['pgw-dupes']==2) : ?> checked<?php endif; ?>> Discard multiple entries, but allow the entrant a single entry
-			<br /><input type="radio" name="pgw-dupes" value="3"<?php if ($_POST['pgw-dupes']==3) : ?> checked<?php endif; ?>> Allow multiple entries
+		<p><input type="radio" name="pgw-dupes" id="pgw-dupes-1" value="1"<?php if ($_POST['pgw-dupes']==1 || !isset($_POST['pgw-dupes'])) : ?> checked<?php endif; ?>> <label for="pgw-dupes-1">Disqualify multiple entrant from drawing completely</label>
+			<br /><input type="radio" name="pgw-dupes" id="pgw-dupes-2" value="2"<?php if ($_POST['pgw-dupes']==2) : ?> checked<?php endif; ?>> <label for="pgw-dupes-2">Discard multiple entries, but allow the entrant a single entry</label>
+			<br /><input type="radio" name="pgw-dupes" id="pgw-dupes-3" value="3"<?php if ($_POST['pgw-dupes']==3) : ?> checked<?php endif; ?>> <label for="pgw-dupes-3">Allow multiple entries</label>
 		</p>
 		<p><input type="submit" value="Pick winners!"></p>
   	</form>
